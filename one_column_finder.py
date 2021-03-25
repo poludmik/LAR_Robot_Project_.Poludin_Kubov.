@@ -15,6 +15,7 @@ if __name__ == '__main__':
     robot = Turtlebot(pc=True, rgb=True, depth=True)
     got_hit = False
     adjusting_way = False
+    found_way = False
 
     print('Waiting for point cloud ...')
     robot.wait_for_point_cloud()
@@ -39,14 +40,29 @@ if __name__ == '__main__':
             print('no regions found!')
         else:
             fig = plt.figure(figsize=(9, 9))
+            print('Got region, found_way:', found_way)
             plt.imshow(connected_image)
             plt.show()
+            found_way = False
             adjusting_way = True
 
         if adjusting_way:
             print('adjusting way! hura')
             print(centers[1])
-            while 100 < centers[1][1] or centers[1][1] > 300:
-                mf.move_rotate(robot, 0.5, 0.2)
+            speed = 0.2
+            while 250 > centers[1][0] or centers[1][0] > 400:
+                print(centers[1])
+                mf.move_rotate(robot, 0.5, speed)
+                image = robot.get_rgb_image()
+                thrash = impf.get_threshold_rgb(image)
                 number_of_regions, connected_image, parameters, centers = impf.get_connected_regions(thrash)
+
+                if len(centers) == 1:
+                    speed = -0.2
+                    mf.move_rotate(robot, 0.5, speed)
+                    number_of_regions, connected_image, parameters, centers = impf.get_connected_regions(thrash)
+
+            print('Adjusted direction, way found.')
+            found_way = True
             adjusting_way = False
+
