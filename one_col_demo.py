@@ -101,37 +101,6 @@ def main():
         cv2.imshow(WINDOW2, thresh)
         cv2.waitKey(1)
 
-        # if pc is None:
-        #     print('No point cloud')
-        #     continue
-        #
-        # # mask out floor points
-        # mask = pc[:, :, 1] < 0.2
-
-        # # mask point too far
-        # mask = np.logical_and(mask, pc[:, :, 2] < 3.0)
-
-        # # empty image
-        # image = np.zeros(mask.shape)
-        #
-        # # assign depth i.e. distance to image
-        # image[mask] = np.int8(pc[:, :, 2][mask] / 3.0 * 255)
-        # im_color = cv2.applyColorMap(255 - image.astype(np.uint8),
-        #                              cv2.COLORMAP_JET)
-        #
-        # # show image
-        # cv2.imshow(WINDOW, im_color)
-        # cv2.waitKey(1)
-
-        # # check obstacle
-        # mask = np.logical_and(mask, pc[:, :, 1] > -0.2)
-        # data = np.sort(pc[:, :, 2][mask])
-        #
-        # state = MOVE
-        # if data.size > 50:
-        #     dist = np.percentile(data, 10)
-        #     if dist < 0.6:
-        #         state = ROTATE
 
 
 
