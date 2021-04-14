@@ -46,8 +46,18 @@ def get_connected_regions(th_image):
 
 def is_region_a_column(parameters):
     width = parameters[2]
-    height = parameters[3]
-    if 8.5 < height / width < 10.5:
+    height = float(parameters[3])
+    if 8.2 < (height / width) < 11:  # changed to 11, sometimes didn't recognise columns with 10.8
         return True
     else:
         return False
+
+
+def get_index_of_any_column(number_of_regions, parameters):
+    index_region = None
+    for i in range(number_of_regions):
+        if impf.is_region_a_column(parameters[i]):
+            index_region = i
+    return index_region
+
+

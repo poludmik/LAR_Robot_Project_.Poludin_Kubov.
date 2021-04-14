@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 from __future__ import print_function
 
@@ -50,6 +49,7 @@ def get_color_from_argv(argv):
         print("No argument")
         exit(2)
     argument = sys.argv[1]
+    needed_color = 0
     if argument != "red" and argument != "green" and argument != "blue":
         print("Incorrect color")
         exit(3)
@@ -75,7 +75,7 @@ def rotate_towards_target(robot, output, image, needed_color):
             elif cX < len(image[0]) / 2 - 30:  # if left from the centre
                 mf.move_rotate(robot, 0.01, angular_vel / 6)
             else:
-                print("Returning")
+                print("Rotated, returning.")
                 return int(cX), int(cY)
         else:
             mf.move_rotate(robot, 0.1, angular_vel / 6)
@@ -84,14 +84,14 @@ def rotate_towards_target(robot, output, image, needed_color):
 def set_column_on_map(map, coords, is_goal):
     if math.isnan(coords[0]) or math.isnan(coords[2]):
         return map
-    y = int(coords[2]*100/CELL_SIZE)
-    x = int(MAP_SIZE/2 + coords[0]*100/CELL_SIZE)
+    y = int(coords[2] * 100 / CELL_SIZE)
+    x = int(MAP_SIZE / 2 + coords[0] * 100 / CELL_SIZE)
     target = None
     if is_goal:
-        map[MAP_SIZE-y][x] = 2
-        target = (MAP_SIZE-y, x)
+        map[MAP_SIZE - y][x] = 2
+        target = (MAP_SIZE - y, x)
     else:
-        map[MAP_SIZE-y][x] = 1
+        map[MAP_SIZE - y][x] = 1
     # print(x, y)
     return map, target
 
@@ -99,11 +99,13 @@ def set_column_on_map(map, coords, is_goal):
 def draw_restricted_zone(map_array):
     r = 5
     map2 = copy.deepcopy(map_array)
+    count_not_goals = 0
     for i in range(MAP_SIZE):
         for j in range(MAP_SIZE):
             if map_array[i][j] == 1:
-                for x in range(-r+i, r+i):
-                    for y in range(-r+j, r+j):
+                count_not_goals += 1
+                for x in range(-r + i, r + i):
+                    for y in range(-r + j, r + j):
                         if 0 < x < 100 and 0 < y < 100:
                             map2[x][y] = 1
     return map2
@@ -116,7 +118,7 @@ def main():
 
     state = "START"
 
-    target = None
+    target = target_local = None
 
     turtle = Turtlebot(pc=True, rgb=True)
     print('Waiting for point cloud ...')
@@ -130,6 +132,8 @@ def main():
     cv2.namedWindow(WINDOW2)
     cv2.setMouseCallback(WINDOW, click)
 
+    count_times_to_print = 0
+
     while not turtle.is_shutting_down():
 
         # get point cloud
@@ -140,7 +144,12 @@ def main():
         thresh = impf.get_threshold_rgb(rgb)
         output = cv2.connectedComponentsWithStats(thresh)
         (numLabels, labels, stats, centroids) = output
-        print("Labels count: ", numLabels)
+
+        if count_times_to_print % 5 == 0:
+            print("Labels count: ", numLabels)
+            print('Current state:', state)
+            count_times_to_print = 0
+        count_times_to_print += 1
 
         if state == "START":
             if rotate_towards_target(turtle, output, thresh, needed_color) is not None:
@@ -161,15 +170,17 @@ def main():
 
         if state == "ROTATED":
             (numLabels, labels, stats, centroids) = output
-            for times in range(5):
-                for i in range(numLabels):
-                    (cX, cY) = centroids[i]  # get coords of column
-                    if impf.is_region_a_column(stats[i]):
-                        if thresh[int(cY)][int(cX)] == needed_color:
-                            map_array, target = set_column_on_map(map_array, pc[int(cY), int(cX)], True)
-                        else:
-                            map_array, target = set_column_on_map(map_array, pc[int(cY), int(cX)], False)
-            if target is not None:
+            for i in range(numLabels):
+                (cX, cY) = centroids[i]  # get coords of column
+                if impf.is_region_a_column(stats[i]):
+                    if thresh[int(cY)][int(cX)] == needed_color:
+                        map_array, target = set_column_on_map(map_array, pc[int(cY), int(cX)], True)
+                        target_local = target  # sometimes was broken,
+                        # because the goal is not always the last one to set on the map
+                    else:
+                        map_array, target = set_column_on_map(map_array, pc[int(cY), int(cX)], False)
+            if target_local is not None:
+                target = target_local
                 state = "COLUMNS_SET"
 
         if state == "COLUMNS_SET":
@@ -179,26 +190,29 @@ def main():
         if state == "RESTRICTIONS_DRAWN":
             problem = astar.Problem(map_array, target)
             path = problem.find_path()
-            print(path)
+            print('path =', path)
             if path is not None:
                 state = "PATH_FOUND"
             for element in path:
-                map_array[element[0]][element[1]] = 1
+                map_array[element[0][0]][element[0][1]] = 3
                 pass
 
         mask = pc[:, :, 1] < 0.2  # mask out floor points
         mask = np.logical_and(mask, pc[:, :, 2] < 4.0)  # mask point too far
         image = np.zeros(mask.shape)  # empty image
         image[mask] = np.int8(pc[:, :, 2][mask] / 3.0 * 255)  # assign depth i.e. distance to image
+
         # im_color = cv2.applyColorMap(255 - image.astype(np.uint8),
         #                              cv2.COLORMAP_JET)
         # show image
         # cv2.imshow(WINDOW, im_color)
-        cv2.imshow(WINDOW, map_array)
+
+        # resize of the map 5x times
+        map_to_show = cv2.resize(map_array, dsize=(MAP_SIZE*5, MAP_SIZE*5), interpolation=cv2.INTER_CUBIC)
+        cv2.imshow(WINDOW, map_to_show)
         cv2.waitKey(1)
-
-
 
 
 if __name__ == '__main__':
     main()
+
