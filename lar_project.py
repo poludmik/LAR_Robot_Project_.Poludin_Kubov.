@@ -191,11 +191,38 @@ def main():
             problem = astar.Problem(map_array, target)
             path = problem.find_path()
             print('path =', path)
+            path = path[:-3]
+            # path = path[1:]
             if path is not None:
                 state = "PATH_FOUND"
             for element in path:
                 map_array[element[0][0]][element[0][1]] = 3
-                pass
+
+        i = 0
+        while i < 100:
+            map_to_show = cv2.resize(map_array, dsize=(MAP_SIZE * 5, MAP_SIZE * 5), interpolation=cv2.INTER_CUBIC)
+            cv2.imshow(WINDOW, map_to_show)
+            i += 1
+
+        if state == "PATH_FOUND":
+            current_dir = 0
+            for position, move in path:
+                print(position, move)
+                if move - current_dir:
+                    if abs(current_dir - move)>4:
+                        move = -(8 % move)
+                    if move != current_dir:
+                        mf.rotate_given_angle_in_deg(turtle, 45 * (-move + current_dir))
+                    current_dir = move
+                if move % 2:
+                    mf.move_given_distance_in_cm(turtle, 7.170)
+                else:
+                    mf.move_given_distance_in_cm(turtle, 5)
+                cv2.imshow(WINDOW, map_array)
+            mf.move_given_distance_in_cm(turtle, 15)
+            mf.move_forward(turtle, 1, 0)
+            state = "DONE"
+
 
         mask = pc[:, :, 1] < 0.2  # mask out floor points
         mask = np.logical_and(mask, pc[:, :, 2] < 4.0)  # mask point too far
