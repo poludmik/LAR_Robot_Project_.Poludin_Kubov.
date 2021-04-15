@@ -33,25 +33,30 @@ def move_given_distance_in_cm(robot, distance_cm):
     print('distance to go (m)=', distance_in_m, 'velocity=', velocity)
     travelled_distance = 0
     # print('traveled=', travelled_distance * 100)
-    while travelled_distance < distance_in_m - 0.005:
+    while travelled_distance < distance_in_m - 0.01:
         robot.cmd_velocity(linear=velocity)
         rate.sleep()
         x, y, _ = robot.get_odometry()
         travelled_distance = math.sqrt(x**2+y**2)
         # print('traveled=', travelled_distance * 100)
+    time.sleep(0.1)
     return True
 
 
 def rotate_given_angle_in_deg(robot, angle_deg):
+    velocity = 7
     rate = Rate(10)
-    angular_velocity_deg = 3  # lower speed = better precision (i.e. 1)
+    if angle_deg > 0:
+        angular_velocity_deg = velocity  # lower speed = better precision (i.e. 1)
+    else:
+        angular_velocity_deg = -velocity
     angular_velocity_rad = angular_velocity_deg * 0.0174532925
     angle_in_rad = 0.0174532925 * angle_deg
     print('angle to rotate (deg)=', angle_deg, 'angular velocity (deg/s)=', angular_velocity_deg)
     robot.reset_odometry()
     travelled_angle_rad = 0
     # print('traveled_deg=', travelled_angle_rad / 0.0174532925)
-    while travelled_angle_rad < angle_in_rad - 0.038:
+    while abs(travelled_angle_rad) < abs(angle_in_rad - 0.038):
         robot.cmd_velocity(angular=angular_velocity_rad)
         rate.sleep()
         _, _, travelled_angle_rad = robot.get_odometry()
