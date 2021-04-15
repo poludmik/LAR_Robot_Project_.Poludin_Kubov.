@@ -17,11 +17,11 @@ def get_threshold_rgb(image_local):
     """
     hsv = cv2.cvtColor(image_local, cv2.COLOR_BGR2HSV)
 
-    color_mask = cv2.inRange(hsv, (0, 125, 25), (20, 255, 255))
+    color_mask = cv2.inRange(hsv, (0, 50, 50), (10, 255, 255))
     _, th_red = cv2.threshold(color_mask, 127, 100, cv2.THRESH_BINARY)
-    color_mask = cv2.inRange(hsv, (35, 125, 25), (100, 255, 255))
+    color_mask = cv2.inRange(hsv, (36, 0, 0), (70, 255,255))
     _, th_green = cv2.threshold(color_mask, 127, 200, cv2.THRESH_BINARY)
-    color_mask = cv2.inRange(hsv, (85, 125, 25), (140, 255, 255))
+    color_mask = cv2.inRange(hsv, (85, 125, 25), (120, 255, 255))
     _, th_blue = cv2.threshold(color_mask, 127, 50, cv2.THRESH_BINARY)
     return th_green + th_red + th_blue
 
@@ -46,18 +46,8 @@ def get_connected_regions(th_image):
 
 def is_region_a_column(parameters):
     width = parameters[2]
-    height = float(parameters[3])
-    if 8.2 < (height / width) < 11:  # changed to 11, sometimes didn't recognise columns with 10.8
+    height = parameters[3]
+    if 7.5 < height / width < 13:
         return True
     else:
         return False
-
-
-def get_index_of_any_column(number_of_regions, parameters):
-    index_region = None
-    for i in range(number_of_regions):
-        if impf.is_region_a_column(parameters[i]):
-            index_region = i
-    return index_region
-
-
