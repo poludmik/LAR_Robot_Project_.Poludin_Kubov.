@@ -132,10 +132,8 @@ def main():
     cv2.namedWindow(WINDOW2)
     cv2.setMouseCallback(WINDOW, click)
 
-    count_times_to_print = 0
-
     while not turtle.is_shutting_down():
-
+        count_times_to_print = 0
         # get point cloud
         pc = turtle.get_point_cloud()
         # get rgb image
@@ -191,18 +189,11 @@ def main():
             problem = astar.Problem(map_array, target)
             path = problem.find_path()
             print('path =', path)
-            path = path[:-3]
-            # path = path[1:]
+            # path = path[:-3]
             if path is not None:
                 state = "PATH_FOUND"
             for element in path:
                 map_array[element[0][0]][element[0][1]] = 3
-
-        i = 0
-        while i < 100:
-            map_to_show = cv2.resize(map_array, dsize=(MAP_SIZE * 5, MAP_SIZE * 5), interpolation=cv2.INTER_CUBIC)
-            cv2.imshow(WINDOW, map_to_show)
-            i += 1
 
         if state == "PATH_FOUND":
             current_dir = 0
@@ -212,15 +203,18 @@ def main():
                     if abs(current_dir - move)>4:
                         move = -(8 % move)
                     if move != current_dir:
-                        mf.rotate_given_angle_in_deg(turtle, 45 * (-move + current_dir))
+                        if current_dir - move > 0:
+                            mf.rotate_given_angle_in_deg(turtle, 45 * (-move + current_dir))
+                        else:
+                            mf.rotate_given_angle_in_deg(turtle, 41 * (-move + current_dir))
                     current_dir = move
                 if move % 2:
-                    mf.move_given_distance_in_cm(turtle, 7.170)
+                    mf.move_given_distance_in_cm(turtle, 7.171)
                 else:
                     mf.move_given_distance_in_cm(turtle, 5)
                 cv2.imshow(WINDOW, map_array)
-            mf.move_given_distance_in_cm(turtle, 15)
-            mf.move_forward(turtle, 1, 0)
+                cv2.waitKey(1)
+            # mf.move_given_distance_in_cm(turtle, 20)
             state = "DONE"
 
 
