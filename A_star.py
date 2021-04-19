@@ -44,7 +44,7 @@ class Problem:
     def __init__(self, map_given, goal):
         self.map = map_given
         self.goal = goal
-        self.start = (99, 49)
+        self.start = (97, 50)
 
     def find_path(self):
         """
