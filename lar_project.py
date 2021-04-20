@@ -62,7 +62,7 @@ def get_color_from_argv(argv):
     return needed_color
 
 
-def rotate_towards_target(robot, output, image, needed_color):
+def rotate_towards_target(robot, output, image, needed_color, first_go):
     print("Rotation start")
     (numLabels, labels, stats, centroids) = output
     for i in range(numLabels):
@@ -71,7 +71,10 @@ def rotate_towards_target(robot, output, image, needed_color):
         if impf.is_region_a_column(stats[i]) and image[int(cY)][int(cX)] == needed_color:
             print("Found", cX, cY)
             if cX > len(image[0]) / 2 + 30:  # if it's right from the centre axis
-                mf.move_rotate(robot, 0.01, -angular_vel / 6)
+                if first_go:
+                    mf.rotate_given_angle_in_deg(robot, -90)
+                else:
+                    mf.move_rotate(robot, 0.01, -angular_vel / 6)
             elif cX < len(image[0]) / 2 - 30:  # if left from the centre
                 mf.move_rotate(robot, 0.01, angular_vel / 6)
             else:
@@ -127,6 +130,7 @@ def main():
     print('Waiting for rgb camera')
     turtle.wait_for_rgb_image()
     print('First RGB received')
+    first_go = True
 
     # cv2.namedWindow(WINDOW)
     cv2.namedWindow(WINDOW2)
@@ -150,12 +154,15 @@ def main():
         count_times_to_print += 1
 
         if state == "START":
-            if rotate_towards_target(turtle, output, thresh, needed_color) is not None:
+
+            if rotate_towards_target(turtle, output, thresh, needed_color, first_go) is not None:
                 rotated = True
+                first_go = False
                 state = "ROTATED"
                 time.sleep(2)  # needed for distance readings to settle
                 continue
             else:
+                first_go = False
                 continue
 
         # show image
@@ -216,7 +223,6 @@ def main():
                 cv2.waitKey(1)
             # mf.move_given_distance_in_cm(turtle, 20)
             state = "DONE"
-
 
         mask = pc[:, :, 1] < 0.2  # mask out floor points
         mask = np.logical_and(mask, pc[:, :, 2] < 4.0)  # mask point too far
